@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EstuLanches - Aluno</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <div><h1>EstuLanches</h1><p>Área do aluno</p></div>
+  <nav><a href="/" class="ativo">Aluno</a><a href="/admin">Administrador</a></nav>
+</header>
+<main>
+  <section>
+    <h2>Cardápio</h2>
+    <ul id="cardapio"></ul>
+  </section>
+
+  <section>
+    <h2>Novo pedido</h2>
+    <div class="form">
+      <select id="produto" aria-label="Produto"></select>
+      <input id="qtd" type="number" value="1" min="1" max="99" aria-label="Quantidade">
+      <button class="sec" onclick="adicionar()">Adicionar ao pedido</button>
+    </div>
+    <ul id="carrinho" style="margin-top:.8rem"></ul>
+    <div id="totalCarrinho" class="total" hidden><span>Total</span><span id="valorTotal"></span></div>
+    <div class="form" style="margin-top:.9rem">
+      <input id="cliente" placeholder="Seu nome" maxlength="100">
+      <button onclick="enviar()">Enviar pedido</button>
+    </div>
+    <p id="msg" class="msg"></p>
+  </section>
+
+  <section>
+    <h2>Meus pedidos</h2>
+    <div class="form">
+      <input id="busca" placeholder="Digite seu nome para consultar" maxlength="100">
+      <button class="sec" onclick="meusPedidos()">Consultar</button>
+    </div>
+    <div id="pedidos" style="margin-top:.8rem"></div>
+  </section>
+</main>
+<script src="/common.js"></script>
+<script>
+let cardapio = [];
+let carrinho = []; // [{ produto_id, quantidade }]
+
+async function carregar() {
+  cardapio = await (await api('GET', '/cardapio')).json();
+  $('cardapio').innerHTML = cardapio.length
+    ? cardapio.map((p) => `<li><span>${esc(p.nome)}</span><strong>${brl(p.preco)}</strong></li>`).join('')
+    : '<li class="vazio">Cardápio ainda não cadastrado.</li>';
+  $('produto').innerHTML = cardapio.map((p) => `<option value="${p.id}">${esc(p.nome)} - ${brl(p.preco)}</option>`).join('');
+}
+function mensagem(texto, tipo) { $('msg').textContent = texto; $('msg').className = 'msg ' + (tipo || ''); }
+
+function adicionar() {
+  const id = +$('produto').value, qtd = +$('qtd').value;
+  if (!id || !Number.isInteger(qtd) || qtd < 1) return mensagem('Escolha um produto e uma quantidade válida.', 'erro');
+  const existente = carrinho.find((i) => i.produto_id === id);
+  if (existente) existente.quantidade += qtd; else carrinho.push({ produto_id: id, quantidade: qtd });
+  $('qtd').value = 1; mensagem(''); desenharCarrinho();
+}
+function remover(id) { carrinho = carrinho.filter((i) => i.produto_id !== id); desenharCarrinho(); }
+
+function desenharCarrinho() {
+  let total = 0;
+  $('carrinho').innerHTML = carrinho.map((i) => {
+    const p = cardapio.find((x) => x.id === i.produto_id); if (!p) return '';
+    total += p.preco * i.quantidade;
+    return `<li><span>${i.quantidade} x ${esc(p.nome)}</span>
+      <span>${brl(p.preco * i.quantidade)} <button class="link" onclick="remover(${i.produto_id})">remover</button></span></li>`;
+  }).join('') || '<li class="vazio">Nenhum item adicionado.</li>';
+  $('totalCarrinho').hidden = !carrinho.length;
+  $('valorTotal').textContent = brl(total);
+}
+
+async function enviar() {
+  if (!carrinho.length) return mensagem('Adicione pelo menos um item ao pedido.', 'erro');
+  const r = await api('POST', '/pedidos', { cliente: $('cliente').value, itens: carrinho });
+  const d = await r.json();
+  if (!r.ok) return mensagem(d.erro, 'erro');
+  mensagem('Pedido nº ' + d.id + ' enviado com sucesso.', 'ok');
+  $('busca').value = $('cliente').value; carrinho = []; desenharCarrinho(); meusPedidos();
+}
+
+async function meusPedidos() {
+  const nome = $('busca').value.trim();
+  if (!nome) return;
+  const o = await (await api('GET', '/pedidos?cliente=' + encodeURIComponent(nome))).json();
+  $('pedidos').innerHTML = o.length ? o.map((p) => `<div class="pedido">
+      <div class="pedido-topo"><span>Pedido nº ${p.id}</span><span class="status ${esc(p.status)}">${esc(p.status)}</span></div>
+      ${itensHtml(p)}</div>`).join('')
+    : '<p class="vazio">Nenhum pedido encontrado para esse nome.</p>';
+}
+carregar().then(desenharCarrinho);
+</script>
+</body>
+</html>

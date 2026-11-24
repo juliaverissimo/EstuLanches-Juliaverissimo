@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EstuLanches - Administrador</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <div><h1>EstuLanches</h1><p>Área do administrador</p></div>
+  <nav><a href="/">Aluno</a><a href="/admin" class="ativo">Administrador</a></nav>
+</header>
+<main>
+  <section id="login">
+    <h2>Acesso restrito</h2>
+    <div class="form">
+      <input id="senha" type="password" placeholder="Senha do administrador">
+      <button onclick="entrar()">Entrar</button>
+    </div>
+    <p id="msgLogin" class="msg erro"></p>
+  </section>
+
+  <div id="painel" style="display:none;gap:1.2rem;grid-template-columns:1fr">
+    <section>
+      <h2>Cadastrar produto</h2>
+      <div class="form">
+        <input id="nome" placeholder="Nome do produto" maxlength="100">
+        <input id="preco" type="number" step="0.01" min="0" placeholder="Preço">
+        <button onclick="addProd()">Adicionar</button>
+      </div>
+      <p id="msgProd" class="msg"></p>
+      <ul id="cardapio"></ul>
+    </section>
+    <section>
+      <h2>Pedidos recebidos</h2>
+      <div id="pedidos"></div>
+      <p style="margin-bottom:0"><button class="sec" onclick="sair()">Sair</button></p>
+    </section>
+  </div>
+</main>
+<script src="/common.js"></script>
+<script>
+let token = sessionStorage.getItem('token');
+const STATUS = ['recebido', 'preparando', 'pronto', 'entregue'];
+
+function mostrar(logado) {
+  $('login').style.display = logado ? 'none' : 'block';
+  $('painel').style.display = logado ? 'grid' : 'none';
+}
+async function entrar() {
+  const r = await api('POST', '/admin/login', { senha: $('senha').value });
+  const d = await r.json();
+  if (!r.ok) { $('msgLogin').textContent = d.erro; return; }
+  token = d.token; sessionStorage.setItem('token', token);
+  $('senha').value = ''; $('msgLogin').textContent = '';
+  iniciar();
+}
+function sair() { sessionStorage.removeItem('token'); token = null; mostrar(false); }
+
+async function carregar() {
+  const c = await (await api('GET', '/cardapio')).json();
+  $('cardapio').innerHTML = c.map((p) => `<li><span>${esc(p.nome)}</span><strong>${brl(p.preco)}</strong></li>`).join('');
+  const r = await api('GET', '/pedidos', null, token);
+  if (r.status === 401) return sair(); // token expirado
+  const o = await r.json();
+  $('pedidos').innerHTML = o.length ? o.slice().reverse().map((p) => `<div class="pedido">
+      <div class="pedido-topo"><span>Pedido nº ${p.id} - ${esc(p.cliente)}</span>
+        <select onchange="mudar(${p.id}, this.value)">${STATUS.map((s) => `<option ${s === p.status ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
+      ${itensHtml(p)}</div>`).join('')
+    : '<p class="vazio">Nenhum pedido recebido.</p>';
+}
+async function addProd() {
+  const r = await api('POST', '/cardapio', { nome: $('nome').value, preco: parseFloat($('preco').value) }, token);
+  const d = await r.json();
+  $('msgProd').textContent = r.ok ? 'Produto cadastrado.' : (d.erro || 'Erro ao cadastrar.');
+  $('msgProd').className = 'msg ' + (r.ok ? 'ok' : 'erro');
+  if (r.ok) { $('nome').value = ''; $('preco').value = ''; carregar(); }
+}
+async function mudar(id, status) { await api('PATCH', `/pedidos/${id}/status`, { status }, token); carregar(); }
+function iniciar() { mostrar(true); carregar(); }
+if (token) iniciar(); else mostrar(false);
+</script>
+</body>
+</html>
