@@ -4,6 +4,10 @@ Docker Desktop com Docker Compose.
 ## Link do vídeo
 [Visite o vídeo](https://drive.google.com/file/d/1FmRLsn8sjuOtxt7ROFk-OUswqOF8DbQr/view?usp=sharing)
 
+## Ficha RDM
+[Veja a ficha]([https://drive.google.com/file/d/1FmRLsn8sjuOtxt7ROFk-OUswqOF8DbQr/view?usp=sharing](https://chatgpt.com/library/share/libfile_de36003237748191b545c7bf9c6eab56?account_id=personal
+))
+
 ## Como executar
 1. Clone o repositório.
 2. Copie `.env.example` para `.env` e altere `DB_PASSWORD` para uma senha forte.
