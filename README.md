@@ -5,8 +5,8 @@ Docker Desktop com Docker Compose.
 [Visite o vídeo](https://drive.google.com/file/d/1FmRLsn8sjuOtxt7ROFk-OUswqOF8DbQr/view?usp=sharing)
 
 ## Ficha RDM
-[Veja a ficha]([https://drive.google.com/file/d/1FmRLsn8sjuOtxt7ROFk-OUswqOF8DbQr/view?usp=sharing](https://chatgpt.com/library/share/libfile_de36003237748191b545c7bf9c6eab56?account_id=personal
-))
+[Veja a ficha](https://docs.google.com/document/d/15hfEZhmHhfGwBkmfC2otBs8821BZtuG669_lWYDUMPM/edit?usp=sharing)
+
 
 ## Como executar
 1. Clone o repositório.
