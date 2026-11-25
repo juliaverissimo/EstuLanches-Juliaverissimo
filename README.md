@@ -1,6 +1,9 @@
 ## Requisitos
 Docker Desktop com Docker Compose.
 
+## Link do vídeo
+[Visite o vídeo](https://drive.google.com/file/d/1FmRLsn8sjuOtxt7ROFk-OUswqOF8DbQr/view?usp=sharing)
+
 ## Como executar
 1. Clone o repositório.
 2. Copie `.env.example` para `.env` e altere `DB_PASSWORD` para uma senha forte.
